@@ -1,0 +1,6 @@
+{
+  "name": "EspressoLoad: Bending Force Visualizer",
+  "description": "An interactive engineering tool for designers to calculate and visualize the load-bearing capacity of portable espresso machine components using beam bending formulas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

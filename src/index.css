@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&family=JetBrains+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "Courier New", monospace;
+  
+  --color-bg: #F1F5F9;
+  --color-surface: #FFFFFF;
+  --color-accent: #0284C7;
+  --color-warning: #EF4444;
+  --color-ink: #0F172A;
+  --color-ink-dim: #64748B;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-ink antialiased font-sans transition-colors duration-500;
+  }
+}
+
+.glass {
+  @apply bg-surface/80 backdrop-blur-xl border border-slate-200/50 shadow-sm;
+}
+
+.param-slider {
+  @apply w-full h-1 bg-slate-200 rounded-full appearance-none cursor-pointer accent-accent hover:bg-slate-300 transition-colors;
+}
+
+.label-mono {
+  @apply font-mono text-[10px] uppercase tracking-[0.2em] text-ink-dim font-bold;
+}
+
+.value-large {
+  @apply text-5xl font-extralight tracking-tighter text-accent;
+}
+
+.stat-card {
+  @apply bg-slate-50 border-l-2 border-accent p-4 rounded-r-lg shadow-sm;
+}
