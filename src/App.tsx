@@ -135,22 +135,25 @@ const BendingModel = ({
 
       {/* IMPACT / FORCE SYMBOL */}
       <Float speed={2} rotationIntensity={0} floatIntensity={0.5}>
-        <mesh position={[params.length * 10, -params.deflection * 10 - 0.5, 0]}>
-          <coneGeometry args={[0.1, 0.3, 16]} />
-          <meshStandardMaterial color="#f87171" emissive="#f87171" emissiveIntensity={2} />
-          <Html position={[0, -0.6, 0]} center>
+        <group position={[params.length * 10, -params.deflection * 10, 0]}>
+          {/* Arrow Head pointing DOWN */}
+          <mesh position={[0, 0.6, 0]} rotation={[Math.PI, 0, 0]}>
+            <coneGeometry args={[0.08, 0.25, 16]} />
+            <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={2} />
+          </mesh>
+          <Html position={[0, 1.2, 0]} center>
             <div className="flex flex-col items-center pointer-events-none scale-90">
-              <span className={`text-[10px] font-mono font-black px-3 py-1 border transition-all ${
+              <span className={`text-[10px] font-mono font-black px-3 py-1 border transition-all whitespace-nowrap ${
                 params.yieldRatio > 1 
-                ? 'bg-warning border-warning text-white animate-bounce shadow-lg' 
-                : 'bg-white border-slate-200 text-ink shadow-xl backdrop-blur-md'
+                ? 'bg-red-600 border-red-400 text-white animate-bounce shadow-lg' 
+                : 'bg-white border-slate-200 text-slate-900 shadow-xl backdrop-blur-md'
               }`}>
-                {params.force.toFixed(0)}N
+                {params.force.toFixed(0)}N LOAD
               </span>
-              <div className={`w-0.5 h-8 mt-[-4px] ${params.yieldRatio > 1 ? 'bg-warning' : 'bg-accent'}`} />
+              <div className={`w-0.5 h-12 mt-[-4px] ${params.yieldRatio > 1 ? 'bg-red-500' : 'bg-accent/40'}`} />
             </div>
           </Html>
-        </mesh>
+        </group>
       </Float>
     </group>
   );
@@ -167,20 +170,26 @@ const calculateBending = (
 ) => {
   const outerSize = 0.05; // 50mm base
   let I = 0;
+  const c = outerSize / 2; // Distance to outermost fiber
   
   if (section === 'Hollow Circle') {
-    const innerD = outerSize - (2 * thickness);
+    const innerD = Math.max(0.001, outerSize - (2 * thickness));
     I = (Math.PI * (Math.pow(outerSize, 4) - Math.pow(innerD, 4))) / 64;
   } else {
-    const innerS = outerSize - (2 * thickness);
-    I = (Math.pow(outerSize, 4) - Math.pow(innerS, 4)) / 12;
+    // Truly Solid Rectangle (actually square in this visual)
+    I = (Math.pow(outerSize, 4)) / 12;
   }
 
-  const deflection = (force * Math.pow(length, 3)) / (3 * material.eModulus * I);
-  const maxStress = (force * length * (outerSize / 2)) / I;
+  // Prevent division by zero
+  const effectiveForce = Math.max(0.1, force);
+  const deflection = (effectiveForce * Math.pow(length, 3)) / (3 * material.eModulus * I);
+  const maxStress = (effectiveForce * length * c) / I;
   const yieldRatio = maxStress / material.yieldStrength;
+  
+  // Predict force needed to bend (Yield Force)
+  const yieldForce = (material.yieldStrength * I) / (length * c);
 
-  return { deflection, yieldRatio, I, maxStress };
+  return { deflection, yieldRatio, I, maxStress, yieldForce };
 };
 
 // --- Main App ---
@@ -305,17 +314,23 @@ export default function App() {
 
           <div className="p-6 border-t border-slate-200/50 bg-slate-50/50">
              <div className="flex items-center justify-between mb-3">
-                <span className="label-mono">Safety Factor</span>
+                <span className="label-mono">Safety Margin</span>
                 <span className={`text-xl font-bold ${results.yieldRatio > 1 ? 'text-warning' : 'text-emerald-600'}`}>
-                  {(1 / results.yieldRatio).toFixed(2)}x
+                  {force > 0 ? (1 / results.yieldRatio).toFixed(1) : '∞'}x
                 </span>
              </div>
              <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                 <motion.div 
                   className={`h-full ${results.yieldRatio > 0.8 ? 'bg-warning' : 'bg-emerald-500'}`}
                   initial={{ width: 0 }}
-                  animate={{ width: `${Math.max(0, Math.min(100, (1/results.yieldRatio) * 20))}%` }}
+                  animate={{ width: `${Math.max(0, Math.min(100, (1/Math.max(0.1, results.yieldRatio)) * 10))}%` }}
                 />
+             </div>
+             <div className="mt-4 pt-4 border-t border-slate-200/30">
+               <div className="label-mono text-[9px] mb-1">Estimated Yield Load</div>
+               <div className="text-sm font-bold text-ink">
+                 {results.yieldForce.toFixed(0)} <span className="text-[10px] text-ink-dim uppercase">Newtons</span>
+               </div>
              </div>
           </div>
         </aside>
